@@ -9,10 +9,9 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
@@ -21,34 +20,34 @@ import org.springframework.kafka.core.ProducerFactory;
 
 @Configuration
 public class KafkaConfigProducer {
-
-  @Bean(name = "consumerConfigs")
-  public Map<String, Object> consumerProps() {
+  @Bean
+  public ConcurrentKafkaListenerContainerFactory<String, CloudEvent> kafkaListenerContainerFactory() {
+    ConcurrentKafkaListenerContainerFactory<String, CloudEvent> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    factory.setConsumerFactory(consumerFactory());
+    return factory;
+  }
+  public Map<String, Object> consumerConfigs() {
     Map<String, Object> props = new HashMap<>();
     props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-    props.put(ConsumerConfig.GROUP_ID_CONFIG, "wallet-consumer-group");
+    props.put(ConsumerConfig.GROUP_ID_CONFIG, "wallet-group-id");
     props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
     props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, CloudEventDeserializer.class);
     props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
     return props;
   }
-
+  @Bean(name = "kafkaProducer")
+  public ProducerFactory<String, CloudEvent> producerFactory() {
+    return new DefaultKafkaProducerFactory<>(producerConfigs());
+  }
   @Bean
-  public ProducerFactory<String, CloudEvent> producerFactory(@Autowired @Qualifier("producerConfigs") Map<String, Object> producerConfigs) {
-    return new DefaultKafkaProducerFactory<>(producerConfigs);
+  public ConsumerFactory<String, CloudEvent> consumerFactory() {
+    return new DefaultKafkaConsumerFactory<>(consumerConfigs());
+  }
+  @Bean
+  public KafkaTemplate<String, CloudEvent> kafkaTemplate() {
+    return new KafkaTemplate<>(producerFactory());
   }
 
-  @Bean
-  public ConsumerFactory<String, CloudEvent> consumerFactory(@Autowired @Qualifier("consumerConfigs") Map<String, Object> consumerConfigs) {
-    return new DefaultKafkaConsumerFactory<>(consumerConfigs);
-  }
-
-  @Bean
-  public KafkaTemplate<String, CloudEvent> kafkaTemplate( ProducerFactory<String, CloudEvent> producerFactory) {
-    return new KafkaTemplate<>(producerFactory);
-  }
-
-  @Bean(name = "producerConfigs")
   public Map<String, Object> producerConfigs() {
     Map<String, Object> props = new HashMap<>();
     props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
