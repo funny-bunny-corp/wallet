@@ -14,6 +14,10 @@ import java.util.UUID;
 @Entity(name = "seller_transaction")
 public class Transaction {
 
+  private static final String EVENT_TYPE = "paymentic.payments-gateway.v1.transaction-registered";
+  private static final String SUBJECT = "transaction-registered";
+  private static final String SOURCE_PATTERN = "/transactions/%s";
+
   @Id
   @Column(name = "transaction_id")
   private UUID id;
@@ -39,7 +43,19 @@ public class Transaction {
   })
   private PaymentOrderId paymentOrder;
   public Transaction(){}
-
+  public Transaction(UUID id, String amount, String currency, CheckoutId checkout, BuyerInfo buyer,
+      PaymentOrderId paymentOrder) {
+    this.id = id;
+    this.amount = amount;
+    this.currency = currency;
+    this.checkout = checkout;
+    this.buyer = buyer;
+    this.paymentOrder = paymentOrder;
+  }
+  public static Transaction newTransactionRegistered(UUID id, String amount, String currency, CheckoutId checkout, BuyerInfo buyer,
+      PaymentOrderId paymentOrder){
+    return new Transaction(id,amount,currency,checkout,buyer,paymentOrder);
+  }
   public UUID getId() {
     return id;
   }
@@ -62,5 +78,14 @@ public class Transaction {
 
   public PaymentOrderId getPaymentOrder() {
     return paymentOrder;
+  }
+  public String type() {
+    return EVENT_TYPE;
+  }
+  public String source() {
+    return String.format(SOURCE_PATTERN,this.id.toString());
+  }
+  public String subject() {
+    return SUBJECT;
   }
 }

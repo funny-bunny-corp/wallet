@@ -1,5 +1,6 @@
 package com.paymentic.wallet.domain.application;
 
+import com.paymentic.wallet.domain.Transaction;
 import com.paymentic.wallet.domain.repositories.TransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +12,7 @@ public class TransactionService {
     this.transactionRepository = transactionRepository;
   }
   @Transactional
-  public void register(){
+  public void register(Transaction transaction){
 
   }
 

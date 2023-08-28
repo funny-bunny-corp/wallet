@@ -1,6 +1,7 @@
 package com.paymentic.wallet.adapter.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.paymentic.wallet.domain.Transaction;
 import com.paymentic.wallet.domain.application.TransactionService;
 import com.paymentic.wallet.domain.events.TransactionProcessedEvent;
 import io.cloudevents.CloudEvent;
@@ -24,7 +25,9 @@ public class PaymentOrderApprovedBridge {
     if (PAYMENT_ORDER_APPROVED_EVENT_TYPE.equals(message.getType())){
       PojoCloudEventData<TransactionProcessedEvent> deserializedData = CloudEventUtils
           .mapData(message, PojoCloudEventDataMapper.from(mapper, TransactionProcessedEvent.class));
-      var transaction = deserializedData.getValue();
+      var payload = deserializedData.getValue();
+      var transaction = Transaction.newTransactionRegistered(payload.transaction().id(), payload.amount(),payload.currency(),payload.checkoutId(),payload.buyer(),payload.payment());
+      this.transactionService.register(transaction);
     }
   }
 
