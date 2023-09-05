@@ -26,7 +26,7 @@ public class PaymentOrderApprovedBridge {
       PojoCloudEventData<TransactionProcessedEvent> deserializedData = CloudEventUtils
           .mapData(message, PojoCloudEventDataMapper.from(mapper, TransactionProcessedEvent.class));
       var payload = deserializedData.getValue();
-      var transaction = Transaction.newTransactionRegistered(payload.transaction().id(), payload.amount(),payload.currency(),payload.checkoutId(),payload.buyer(),payload.payment());
+      var transaction = Transaction.newTransactionRegistered(payload.transaction().id(), payload.amount(),payload.currency(),payload.checkoutId(),payload.buyer(),payload.payment(),payload.seller());
       this.transactionService.register(transaction);
     }
   }

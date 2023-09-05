@@ -2,6 +2,7 @@ package com.paymentic.wallet.adapter.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.paymentic.wallet.domain.Transaction;
+import com.paymentic.wallet.domain.events.TransactionRegisteredEvent;
 import com.paymentic.wallet.domain.publisher.TransactionRegisteredPublisher;
 import com.paymentic.wallet.infra.ce.CExtensions;
 import com.paymentic.wallet.infra.ce.CExtensions.Audience;
@@ -29,7 +30,7 @@ public class TransactionRegisteredBridge implements TransactionRegisteredPublish
     this.mapper = mapper;
   }
   @Override
-  public void publish(Transaction transaction) {
+  public void publish(TransactionRegisteredEvent transaction) {
     var ce = CloudEventBuilder.v1()
         .withId(UUID.randomUUID().toString())
         .withSource(URI.create(transaction.source()))

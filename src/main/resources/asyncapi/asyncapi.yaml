@@ -19,7 +19,7 @@ channels:
     description: The topic on which payments may be consumed.
     subscribe:
       summary: >-
-        Inform about payment order approved
+        Inform about transaction registered in wallet
       operationId: transactionWalletRegisteredStream
       message:
         $ref: '#/components/messages/ceTransactionWalletRegisteredEvent'
@@ -41,7 +41,7 @@ components:
 
     ceTransactionWalletRegisteredEvent:
       name: transactionWalletRegisteredEvent
-      title: Payment Orders Approved
+      title: Transaction registered in wallet
       summary: >-
         Inform about environmental lighting conditions of a particular
         streetlight.

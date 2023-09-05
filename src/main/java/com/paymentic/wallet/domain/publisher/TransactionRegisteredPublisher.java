@@ -1,8 +1,8 @@
 package com.paymentic.wallet.domain.publisher;
 
-import com.paymentic.wallet.domain.Transaction;
+import com.paymentic.wallet.domain.events.TransactionRegisteredEvent;
 
 public interface TransactionRegisteredPublisher {
-  void publish(Transaction transaction);
+  void publish(TransactionRegisteredEvent transaction);
 
 }
