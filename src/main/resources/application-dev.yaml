@@ -12,3 +12,20 @@ spring:
     open-in-view: false
 server:
   port: 8084
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+    enabled: true
+  otlp:
+    tracing:
+      endpoint:
+    metrics:
+      export:
+        resource-attributes:
+          "service-name" : ${spring.application.name}
+  endpoints:
+    web:
+      exposure:
+        include: 'health,info,startup,prometheus'

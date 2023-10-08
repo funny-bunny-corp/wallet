@@ -1,1 +1,4 @@
-
+spring:
+  application:
+    name: wallet
+    version: 0.0.1

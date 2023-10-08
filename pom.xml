@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.1.2</version>
+    <version>3.1.4</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
   <groupId>com.paymentic</groupId>
@@ -16,6 +16,7 @@
   <description>wallet</description>
   <properties>
     <java.version>20</java.version>
+    <opentelemetry.version>1.30.0</opentelemetry.version>
   </properties>
   <dependencies>
 
@@ -87,10 +88,37 @@
       <artifactId>spring-kafka</artifactId>
     </dependency>
 
+    <!-- Tracing/Metrics -->
+
+    <dependency>
+      <groupId>com.github.loki4j</groupId>
+      <artifactId>loki-logback-appender</artifactId>
+      <version>1.4.1</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+      <version>1.11.4</version>
+    </dependency>
+
   </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-tracing-bom</artifactId>
+        <version>1.1.5</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <build>
     <plugins>
+
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
@@ -100,6 +128,41 @@
           </layers>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.3.0</version>
+        <executions>
+          <execution>
+            <id>copy-otel-javaagent</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifact>io.opentelemetry.javaagent:opentelemetry-javaagent:${opentelemetry.version}</artifact>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+              <stripVersion>true</stripVersion>
+              <outputDirectory>${project.build.directory}/agents/</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <mainClass>
+            com.paymentic.wallet.WalletApplication
+          </mainClass>
+          <agents>target/agents/opentelemetry-javaagent.jar</agents>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 

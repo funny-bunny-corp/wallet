@@ -44,6 +44,4 @@ public class TransactionRegisteredBridge implements TransactionRegisteredPublish
         .thenRun(() -> logger.info("Message sent. Id: {}; Data: {}", ce.getId(), transaction));
   }
 
-
-
 }
