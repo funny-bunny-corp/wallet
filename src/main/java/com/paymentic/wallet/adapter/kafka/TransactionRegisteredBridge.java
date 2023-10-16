@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class TransactionRegisteredBridge implements TransactionRegisteredPublisher {
   private final KafkaTemplate<String, CloudEvent> sender;
-
   private final ObjectMapper mapper;
   private final Logger logger = LoggerFactory.getLogger(TransactionRegisteredBridge.class);
   public TransactionRegisteredBridge(KafkaTemplate<String, CloudEvent> sender,
