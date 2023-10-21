@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TransactionService {
   private final TransactionRepository transactionRepository;
-
   private final TransactionRegisteredPublisher publisher;
   public TransactionService( TransactionRepository transactionRepository,
       TransactionRegisteredPublisher publisher) {
