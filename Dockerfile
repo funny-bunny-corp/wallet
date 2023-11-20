@@ -9,6 +9,4 @@ COPY --from=builder snapshot-dependencies/ ./
 COPY --from=builder spring-boot-loader/ ./
 COPY --from=builder application/ ./
 
-ENV API_SECRET_KEY=place_holder
-
 ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
