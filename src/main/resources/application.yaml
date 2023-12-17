@@ -2,3 +2,6 @@ spring:
   application:
     name: wallet
     version: 0.0.1
+  threads:
+    virtual:
+      enabled: true

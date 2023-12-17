@@ -53,6 +53,7 @@ spec:
           {{- with .Values.volumeMounts }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
             - name: JDBC_URL
               valueFrom:
@@ -94,7 +95,6 @@ spec:
                 configMapKeyRef:
                   key: profile
                   name:  {{ include "wallet.fullname" . }}
-          {{- end }}
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
