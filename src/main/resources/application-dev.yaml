@@ -11,7 +11,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
   kafka:
-    bootstrap-servers: pkc-p11xm.us-east-1.aws.confluent.cloud:9092
+    bootstrap-servers: localhost:9092
     consumer:
       group-id: wallet-service-group-id
     properties:
