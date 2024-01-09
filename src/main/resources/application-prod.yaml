@@ -19,7 +19,7 @@ spring:
         protocol: SASL_SSL
       sasl:
         jaas:
-          config: ${JAAS_CONFIG}
+          config: hha
         mechanism: PLAIN
 server:
   port: 8084

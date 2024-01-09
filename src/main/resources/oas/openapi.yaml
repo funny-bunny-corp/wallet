@@ -1,0 +1,59 @@
+openapi: 3.0.2
+info:
+  title: Payouts APIs
+  version: 1.0.0
+  description: A brand new API with no content.  Go nuts!
+paths:
+  /payouts: {}
+components:
+  schemas:
+    amount:
+      title: Root Type for amount
+      description: ''
+      type: object
+      properties:
+        currency:
+          type: string
+        value:
+          type: string
+      example:
+        currency: USD
+        value: '9.87'
+    payout:
+      title: Root Type for payout
+      description: ''
+      required:
+        - seller
+        - amount
+      type: object
+      properties:
+        note:
+          type: string
+        amount:
+          $ref: '#/components/schemas/amount'
+          properties:
+            currency:
+              type: string
+            value:
+              type: string
+        seller:
+          $ref: '#/components/schemas/seller'
+          properties:
+            account:
+              type: string
+      example:
+        note: Thanks for your patronage!
+        amount:
+          currency: USD
+          value: '9.87'
+        seller:
+          account: 28c80b82-3917-11ee-b450-325096b39f47
+    seller:
+      title: Root Type for seller
+      description: ''
+      type: object
+      properties:
+        account:
+          type: string
+      example:
+        account: 28c80b82-3917-11ee-b450-325096b39f47

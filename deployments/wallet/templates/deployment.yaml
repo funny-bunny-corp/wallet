@@ -70,11 +70,6 @@ spec:
                 secretKeyRef:
                   name: {{ include "wallet.fullname" . }}
                   key: username
-            - name: JAAS_CONFIG
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "wallet.fullname" . }}
-                  key: kafka_jaas
             - name: OTEL_RESOURCE_ATTRIBUTES
               valueFrom:
                 configMapKeyRef:

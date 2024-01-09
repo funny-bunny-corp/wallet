@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    password: postgres
-    username: postgres
+    url: ${JDBC_URL}
+    password: ${JDBC_PASS}
+    username: ${JDBC_USER}
   jpa:
     hibernate:
       ddl-auto: update
@@ -11,7 +11,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: my-cluster-kafka-brokers.kafka:9092
     consumer:
       group-id: wallet-service-group-id
     properties:

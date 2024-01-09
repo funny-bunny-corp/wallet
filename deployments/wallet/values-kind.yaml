@@ -2,8 +2,7 @@
 db:
   user: cG9zdGdyZXM=
   pass: cG9zdGdyZXM=
-  url: amRiYzpwb3N0Z3Jlc3FsOi8vbG9jYWxob3N0OjU0MzIvcG9zdGdyZXM=
+  url: amRiYzpwb3N0Z3Jlc3FsOi8vcG9zdGdyZXNxbC5kYXRhYmFzZTo1NDMyL3Bvc3RncmVz
 
 ## Spring profile
-profile: dev
-
+profile: kind
