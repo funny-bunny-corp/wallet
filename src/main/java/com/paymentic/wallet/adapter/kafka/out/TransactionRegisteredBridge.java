@@ -1,7 +1,6 @@
-package com.paymentic.wallet.adapter.kafka;
+package com.paymentic.wallet.adapter.kafka.out;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.paymentic.wallet.domain.Transaction;
 import com.paymentic.wallet.domain.events.TransactionRegisteredEvent;
 import com.paymentic.wallet.domain.publisher.TransactionRegisteredPublisher;
 import com.paymentic.wallet.infra.ce.CExtensions;

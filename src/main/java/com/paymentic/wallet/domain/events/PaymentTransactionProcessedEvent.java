@@ -7,6 +7,6 @@ import com.paymentic.wallet.domain.shared.SellerInfo;
 import com.paymentic.wallet.domain.shared.TransactionId;
 import java.time.LocalDateTime;
 
-public record TransactionProcessedEvent(TransactionId transaction, SellerInfo seller,
-                                        PaymentOrderId payment, CheckoutId checkoutId, String amount, String currency,
-                                        LocalDateTime at, BuyerInfo buyer) {}
+public record PaymentTransactionProcessedEvent(TransactionId transaction, SellerInfo seller,
+                                               PaymentOrderId payment, CheckoutId checkoutId, String amount, String currency,
+                                               LocalDateTime at, BuyerInfo buyer) {}
