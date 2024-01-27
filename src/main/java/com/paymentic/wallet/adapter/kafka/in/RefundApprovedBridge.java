@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class RefundApprovedBridge {
-  private static final String REFUND_APPROVED_EVENT_TYPE = "paymentic.payments.gateway.v1.refund.approved";
+  private static final String REFUND_APPROVED_EVENT_TYPE = "paymentic.io.payment-processing.v1.refund.approved";
   private static final Logger LOGGER = LoggerFactory.getLogger(RefundApprovedBridge.class);
   private static final String ERROR = "Event %s already handled!!!";
   private final RefundTransactionService refundTransactionService;
