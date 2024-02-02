@@ -1,7 +1,7 @@
 package com.paymentic.wallet.infra.kafka;
 
 public enum TopicNames {
-  PAYMENTS("payments");
+  PAYMENT_PROCESSING("payment-processing");
   private final String name;
   TopicNames(String name) {
     this.name = name;

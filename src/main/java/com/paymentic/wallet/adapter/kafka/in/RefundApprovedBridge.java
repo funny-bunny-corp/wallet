@@ -30,7 +30,7 @@ public class RefundApprovedBridge {
     this.mapper = mapper;
     this.eventService = eventService;
   }
-  @KafkaListener(id = "refundOrderApproved",groupId = "wallet-group-id", topics = "payments")
+  @KafkaListener(id = "refundOrderApproved",groupId = "wallet-group-id", topics = "${consumers.payment-processing-topic}")
   public void listen(CloudEvent message){
     var handle = this.eventService.shouldHandle(new Event(UUID.fromString(message.getId())));
     if (handle){

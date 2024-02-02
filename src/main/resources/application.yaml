@@ -1,7 +1,11 @@
 spring:
   application:
     name: wallet
-    version: 0.0.1
   threads:
     virtual:
       enabled: true
+
+consumers:
+  payment-processing-topic: payment-processing
+  financial-reporting-topic: financial-reporting
+  merchant-account-topic: merchant-account
