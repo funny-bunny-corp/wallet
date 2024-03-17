@@ -20,7 +20,7 @@ public class TransactionRegisteredEvent {
   private final String currency;
   private final LocalDateTime at;
   private final OperationType operationType;
-  private static final String EVENT_TYPE = "paymentic.io.merchant-account.v1.transaction.registered";
+  private static final String EVENT_TYPE = "funny-bunny.xyz.merchant-account.v1.transaction.registered";
   private static final String SOURCE_PATTERN = "/transactions/%s";
   TransactionRegisteredEvent(TransactionId transaction, SellerInfo seller,
       PaymentOrderId payment, CheckoutId checkout, BuyerInfo buyer,
