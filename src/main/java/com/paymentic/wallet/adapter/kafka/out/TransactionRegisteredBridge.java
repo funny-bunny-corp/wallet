@@ -38,7 +38,7 @@ public class TransactionRegisteredBridge implements TransactionRegisteredPublish
         .withExtension(CExtensions.AUDIENCE.extensionName(), Audience.INTERNAL_BOUNDED_CONTEXT.audienceName())
         .withExtension(CExtensions.EVENT_CONTEXT.extensionName(), EventContext.DOMAIN.eventContextName())
         .build();
-    this.sender.send(TopicNames.PAYMENT_PROCESSING.topicName(), ce)
+    this.sender.send(TopicNames.MERCHANT_ACCOUNT.topicName(), ce)
         .thenRun(() -> logger.info("Message sent. Id: {}; Data: {}", ce.getId(), transaction));
   }
 
