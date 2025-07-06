@@ -233,15 +233,25 @@ class ApiService {
     try {
       await new Promise(resolve => setTimeout(resolve, 800));
       
+      // Simple currency conversion rates to USD for demonstration
+      const exchangeRates = {
+        'USD': 1.0,
+        'EUR': 1.09,
+        'GBP': 1.27,
+        'CAD': 0.74,
+        'AUD': 0.67
+      };
+      
       const stats = {
         totalPayouts: mockPayouts.length,
         totalAmount: mockPayouts.reduce((sum, payout) => {
-          // Convert all to USD for simplicity
+          // Convert all to USD using exchange rates
           const value = parseFloat(payout.amount.value);
-          return sum + value;
+          const rate = exchangeRates[payout.amount.currency] || 1.0;
+          return sum + (value * rate);
         }, 0),
         currencies: [...new Set(mockPayouts.map(p => p.amount.currency))],
-        lastPayout: mockPayouts[mockPayouts.length - 1]
+        lastPayout: mockPayouts.length > 0 ? mockPayouts[mockPayouts.length - 1] : null
       };
       
       return stats;
