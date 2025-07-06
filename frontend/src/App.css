@@ -1,0 +1,185 @@
+/* Custom Theme Colors */
+:root {
+  --primary-light-blue: #87CEEB;
+  --secondary-light-purple: #DDA0DD;
+  --primary-dark-blue: #4682B4;
+  --secondary-dark-purple: #9370DB;
+  --light-gray: #F8F9FA;
+  --dark-gray: #6C757D;
+  --white: #FFFFFF;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Global Styles */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, var(--primary-light-blue) 0%, var(--secondary-light-purple) 100%);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  min-height: 100vh;
+}
+
+/* Header Styles */
+.header {
+  background: linear-gradient(90deg, var(--primary-dark-blue) 0%, var(--secondary-dark-purple) 100%);
+  padding: 1rem 0;
+  box-shadow: var(--shadow);
+  margin-bottom: 2rem;
+}
+
+.header h1 {
+  color: var(--white);
+  margin: 0;
+  font-weight: 300;
+  font-size: 2.5rem;
+}
+
+.header .nav-link {
+  color: var(--white) !important;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.header .nav-link:hover {
+  color: var(--primary-light-blue) !important;
+  transform: translateY(-2px);
+}
+
+/* Card Styles */
+.custom-card {
+  background: var(--white);
+  border: none;
+  border-radius: 15px;
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+  margin-bottom: 1.5rem;
+}
+
+.custom-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.custom-card-header {
+  background: linear-gradient(90deg, var(--primary-light-blue) 0%, var(--secondary-light-purple) 100%);
+  color: var(--white);
+  border-radius: 15px 15px 0 0;
+  padding: 1rem 1.5rem;
+  font-weight: 500;
+}
+
+/* Button Styles */
+.btn-primary-custom {
+  background: linear-gradient(90deg, var(--primary-dark-blue) 0%, var(--secondary-dark-purple) 100%);
+  border: none;
+  border-radius: 25px;
+  padding: 0.75rem 2rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-primary-custom:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary-custom {
+  background: linear-gradient(90deg, var(--primary-light-blue) 0%, var(--secondary-light-purple) 100%);
+  border: none;
+  border-radius: 25px;
+  padding: 0.75rem 2rem;
+  font-weight: 500;
+  color: var(--white);
+  transition: all 0.3s ease;
+}
+
+.btn-secondary-custom:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Form Styles */
+.form-control {
+  border: 2px solid var(--primary-light-blue);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  border-color: var(--secondary-dark-purple);
+  box-shadow: 0 0 0 0.2rem rgba(147, 112, 219, 0.25);
+}
+
+/* Payout Item Styles */
+.payout-item {
+  background: var(--white);
+  border: none;
+  border-radius: 15px;
+  box-shadow: var(--shadow);
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+  padding: 1.5rem;
+}
+
+.payout-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.payout-amount {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary-dark-blue);
+}
+
+.payout-currency {
+  font-size: 1rem;
+  color: var(--dark-gray);
+  font-weight: 500;
+}
+
+.payout-account {
+  color: var(--secondary-dark-purple);
+  font-weight: 500;
+}
+
+.payout-note {
+  color: var(--dark-gray);
+  font-style: italic;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  border: 4px solid var(--primary-light-blue);
+  border-top: 4px solid var(--secondary-dark-purple);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 2rem auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header h1 {
+    font-size: 2rem;
+  }
+  
+  .custom-card {
+    margin-bottom: 1rem;
+  }
+  
+  .payout-item {
+    padding: 1rem;
+  }
+}
