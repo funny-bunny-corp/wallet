@@ -33,7 +33,7 @@ The **Paymentic Wallet Transactions** data product provides real-time analytical
 - **Source System**: Paymentic Wallet Application
 - **Event Stream**: Kafka topic `merchant-account`
 - **Event Format**: CloudEvents JSON
-- **Event Type**: `funny-bunny.xyz.merchant-account.v1.transaction.registered`
+- **Event Type**: `paymentic.com.merchant-account.v1.transaction.registered`
 - **Data Freshness**: < 30 seconds
 - **Availability SLA**: 99.9%
 
@@ -53,7 +53,7 @@ The **Paymentic Wallet Transactions** data product provides real-time analytical
 | `checkoutId` | STRING | Checkout session identifier (null for refunds) | "checkout123" | Yes |
 | `eventSource` | STRING | CloudEvent source identifier | "/transactions/123e4567-e89b-12d3-a456-426614174000" | No |
 | `eventSubject` | STRING | CloudEvent subject | "payment-created" | No |
-| `eventType` | STRING | CloudEvent type | "funny-bunny.xyz.merchant-account.v1.transaction.registered" | No |
+| `eventType` | STRING | CloudEvent type | "paymentic.com.merchant-account.v1.transaction.registered" | No |
 | `cloudEventId` | STRING | CloudEvent unique identifier | "ce-123e4567-e89b-12d3-a456-426614174000" | No |
 
 ### Metric Fields (Aggregation)
