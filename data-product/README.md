@@ -94,7 +94,7 @@ SELECT
     SUM(amount) as total_revenue,
     COUNT(*) as transaction_count,
     AVG(amount) as avg_transaction_amount
-FROM paymentic_wallet_transactions 
+FROM `paymentic-wallet-transactions`
 WHERE operationType = 'PAYMENT'
     AND transactionTimestamp >= '2024-01-01'
     AND transactionTimestamp < '2024-01-02'
@@ -112,7 +112,7 @@ SELECT
     amount,
     currency,
     transactionTimestamp
-FROM paymentic_wallet_transactions 
+FROM `paymentic-wallet-transactions`
 WHERE transactionTimestamp >= DATEADD(MINUTE, -5, NOW())
 ORDER BY transactionTimestamp DESC
 LIMIT 100;
@@ -128,7 +128,7 @@ SELECT
     AVG(amount) as avg_amount,
     MIN(amount) as min_amount,
     MAX(amount) as max_amount
-FROM paymentic_wallet_transactions 
+FROM `paymentic-wallet-transactions`
 WHERE transactionTimestamp >= DATEADD(DAY, -30, NOW())
 GROUP BY currency, operationType
 ORDER BY currency, operationType;
@@ -144,7 +144,7 @@ SELECT
         COUNT(CASE WHEN operationType = 'REFUND' THEN 1 END) * 100.0 / 
         COUNT(CASE WHEN operationType = 'PAYMENT' THEN 1 END), 2
     ) as refund_rate_percent
-FROM paymentic_wallet_transactions 
+FROM `paymentic-wallet-transactions`
 WHERE transactionTimestamp >= DATEADD(DAY, -30, NOW())
 GROUP BY sellerId
 HAVING COUNT(CASE WHEN operationType = 'PAYMENT' THEN 1 END) > 0
@@ -161,7 +161,7 @@ SELECT
     amount,
     currency,
     transactionTimestamp
-FROM paymentic_wallet_transactions 
+FROM `paymentic-wallet-transactions`
 WHERE amount > 10000
     AND transactionTimestamp >= DATEADD(HOUR, -1, NOW())
 ORDER BY amount DESC;
