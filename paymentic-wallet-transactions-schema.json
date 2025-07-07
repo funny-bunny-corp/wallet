@@ -1,0 +1,104 @@
+{
+  "schemaName": "paymentic-wallet-transactions",
+  "dimensionFieldSpecs": [
+    {
+      "name": "transactionId",
+      "dataType": "STRING",
+      "notNull": true,
+      "singleValueField": true
+    },
+    {
+      "name": "operationType",
+      "dataType": "STRING",
+      "notNull": true,
+      "singleValueField": true
+    },
+    {
+      "name": "sellerId",
+      "dataType": "STRING",
+      "notNull": true,
+      "singleValueField": true
+    },
+    {
+      "name": "buyerDocument",
+      "dataType": "STRING",
+      "notNull": true,
+      "singleValueField": true
+    },
+    {
+      "name": "buyerName",
+      "dataType": "STRING",
+      "notNull": true,
+      "singleValueField": true
+    },
+    {
+      "name": "currency",
+      "dataType": "STRING",
+      "notNull": true,
+      "singleValueField": true
+    },
+    {
+      "name": "paymentOrderId",
+      "dataType": "STRING",
+      "notNull": true,
+      "singleValueField": true
+    },
+    {
+      "name": "checkoutId",
+      "dataType": "STRING",
+      "notNull": false,
+      "singleValueField": true
+    },
+    {
+      "name": "eventSource",
+      "dataType": "STRING",
+      "notNull": true,
+      "singleValueField": true
+    },
+    {
+      "name": "eventSubject",
+      "dataType": "STRING",
+      "notNull": true,
+      "singleValueField": true
+    },
+    {
+      "name": "eventType",
+      "dataType": "STRING",
+      "notNull": true,
+      "singleValueField": true
+    },
+    {
+      "name": "cloudEventId",
+      "dataType": "STRING",
+      "notNull": true,
+      "singleValueField": true
+    }
+  ],
+  "metricFieldSpecs": [
+    {
+      "name": "amount",
+      "dataType": "BIG_DECIMAL",
+      "notNull": true,
+      "singleValueField": true
+    }
+  ],
+  "dateTimeFieldSpecs": [
+    {
+      "name": "transactionTimestamp",
+      "dataType": "TIMESTAMP",
+      "notNull": true,
+      "singleValueField": true,
+      "format": "1:MILLISECONDS:EPOCH",
+      "granularity": "1:MILLISECONDS"
+    },
+    {
+      "name": "eventTimestamp",
+      "dataType": "TIMESTAMP",
+      "notNull": true,
+      "singleValueField": true,
+      "format": "1:MILLISECONDS:EPOCH",
+      "granularity": "1:MILLISECONDS"
+    }
+  ],
+  "primaryKeyColumns": ["transactionId"]
+}
