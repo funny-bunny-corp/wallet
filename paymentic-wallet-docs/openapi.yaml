@@ -1,0 +1,754 @@
+openapi: 3.0.3
+info:
+  title: Paymentic Wallet API
+  description: |
+    The Paymentic Wallet API provides comprehensive transaction management capabilities for payment processing and refund operations. 
+    This API enables merchants to process payouts, track transactions, and manage financial operations in real-time.
+    
+    ## Features
+    - Create payout transactions for merchants
+    - Real-time transaction processing
+    - Event-driven architecture with CloudEvents support
+    - Comprehensive audit trail
+    
+    ## Authentication
+    All API endpoints require Bearer token authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-token>
+    ```
+    
+    ## Rate Limiting
+    - Default: 1000 requests per minute per API key
+    - Burst: 100 requests per second
+    
+    ## Environments
+    - Development: `https://dev-api.paymentic.com`
+    - Staging: `https://staging-api.paymentic.com`
+    - Production: `https://api.paymentic.com`
+  version: 1.0.0
+  contact:
+    name: Paymentic Support
+    email: support@paymentic.com
+    url: https://support.paymentic.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://paymentic.com/terms
+
+servers:
+  - url: https://api.paymentic.com/v1
+    description: Production server
+  - url: https://staging-api.paymentic.com/v1
+    description: Staging server
+  - url: https://dev-api.paymentic.com/v1
+    description: Development server
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Payouts
+    description: Payout transaction operations
+  - name: Transactions
+    description: Transaction query and management
+  - name: Health
+    description: Health and monitoring endpoints
+
+security:
+  - bearerAuth: []
+
+paths:
+  /payouts:
+    post:
+      tags:
+        - Payouts
+      summary: Create a new payout
+      description: |
+        Creates a new payout transaction for a merchant. This endpoint processes the payout immediately 
+        and publishes a transaction event to the event stream for downstream processing.
+      operationId: createPayout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+            examples:
+              basicPayout:
+                summary: Basic payout example
+                value:
+                  amount:
+                    value: "100.00"
+                    currency: "USD"
+                  seller:
+                    account: "28c80b82-3917-11ee-b450-325096b39f47"
+                  note: "Monthly payout for October 2024"
+              multiCurrencyPayout:
+                summary: Multi-currency payout
+                value:
+                  amount:
+                    value: "250.50"
+                    currency: "EUR"
+                  seller:
+                    account: "98d12f3a-4567-22ff-c890-123456789abc"
+                  note: "International merchant payout"
+      responses:
+        '201':
+          description: Payout successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutResponse'
+              examples:
+                success:
+                  value:
+                    transactionId: "550e8400-e29b-41d4-a716-446655440000"
+                    status: "PROCESSED"
+                    note: "Monthly payout for October 2024"
+                    createdAt: "2024-01-15T10:30:00Z"
+          headers:
+            X-Request-ID:
+              description: Unique request identifier for tracking
+              schema:
+                type: string
+                example: "req_1234567890"
+            X-Rate-Limit-Remaining:
+              description: Number of requests remaining in the current window
+              schema:
+                type: integer
+                example: 999
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidAmount:
+                  value:
+                    error:
+                      code: "INVALID_AMOUNT"
+                      message: "Amount must be a positive number"
+                      details:
+                        field: "amount.value"
+                        value: "-10.00"
+                invalidCurrency:
+                  value:
+                    error:
+                      code: "INVALID_CURRENCY"
+                      message: "Currency code must be a valid ISO 4217 code"
+                      details:
+                        field: "amount.currency"
+                        value: "XXX"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          description: Conflict - Duplicate transaction
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailableError'
+      x-codegen-request-body-name: body
+
+  /transactions/{transactionId}:
+    get:
+      tags:
+        - Transactions
+      summary: Get transaction details
+      description: Retrieves detailed information about a specific transaction by its ID
+      operationId: getTransaction
+      parameters:
+        - name: transactionId
+          in: path
+          description: Unique transaction identifier
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Transaction details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionDetails'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /transactions:
+    get:
+      tags:
+        - Transactions
+      summary: List transactions
+      description: Retrieves a paginated list of transactions with optional filtering
+      operationId: listTransactions
+      parameters:
+        - name: sellerId
+          in: query
+          description: Filter by seller ID
+          schema:
+            type: string
+            example: "28c80b82-3917-11ee-b450-325096b39f47"
+        - name: status
+          in: query
+          description: Filter by transaction status
+          schema:
+            type: string
+            enum: [PENDING, PROCESSED, FAILED, CANCELLED]
+        - name: fromDate
+          in: query
+          description: Filter transactions from this date (inclusive)
+          schema:
+            type: string
+            format: date-time
+            example: "2024-01-01T00:00:00Z"
+        - name: toDate
+          in: query
+          description: Filter transactions until this date (inclusive)
+          schema:
+            type: string
+            format: date-time
+            example: "2024-01-31T23:59:59Z"
+        - name: currency
+          in: query
+          description: Filter by currency code
+          schema:
+            type: string
+            example: "USD"
+        - name: minAmount
+          in: query
+          description: Minimum transaction amount
+          schema:
+            type: number
+            format: decimal
+            example: 10.00
+        - name: maxAmount
+          in: query
+          description: Maximum transaction amount
+          schema:
+            type: number
+            format: decimal
+            example: 1000.00
+        - name: page
+          in: query
+          description: Page number (0-indexed)
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sort
+          in: query
+          description: Sort field and direction (e.g., "createdAt,desc")
+          schema:
+            type: string
+            default: "createdAt,desc"
+      responses:
+        '200':
+          description: List of transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionListResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the health status of the service
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /health/ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness check
+      description: Indicates if the service is ready to accept requests
+      operationId: readinessCheck
+      security: []
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          description: Service is not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+
+  /health/live:
+    get:
+      tags:
+        - Health
+      summary: Liveness check
+      description: Indicates if the service is alive
+      operationId: livenessCheck
+      security: []
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "UP"
+
+components:
+  schemas:
+    PayoutRequest:
+      type: object
+      required:
+        - amount
+        - seller
+      properties:
+        amount:
+          $ref: '#/components/schemas/Amount'
+        seller:
+          $ref: '#/components/schemas/Seller'
+        note:
+          type: string
+          description: Optional note for the payout
+          maxLength: 500
+          example: "Monthly payout for October 2024"
+        metadata:
+          type: object
+          description: Additional metadata for the payout
+          additionalProperties:
+            type: string
+          example:
+            invoiceId: "INV-2024-001"
+            period: "2024-10"
+
+    PayoutResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+          description: Unique identifier for the transaction
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        status:
+          type: string
+          description: Current status of the payout
+          enum: [PENDING, PROCESSED, FAILED, CANCELLED]
+          example: "PROCESSED"
+        note:
+          type: string
+          description: Note associated with the payout
+          example: "Monthly payout for October 2024"
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the payout was created
+          example: "2024-01-15T10:30:00Z"
+        amount:
+          $ref: '#/components/schemas/Amount'
+        seller:
+          $ref: '#/components/schemas/Seller'
+
+    Amount:
+      type: object
+      required:
+        - value
+        - currency
+      properties:
+        value:
+          type: string
+          pattern: '^[0-9]+(\.[0-9]{1,2})?$'
+          description: Amount value with up to 2 decimal places
+          example: "100.00"
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: ISO 4217 currency code
+          example: "USD"
+
+    Seller:
+      type: object
+      required:
+        - account
+      properties:
+        account:
+          type: string
+          format: uuid
+          description: Seller's account identifier
+          example: "28c80b82-3917-11ee-b450-325096b39f47"
+        name:
+          type: string
+          description: Seller's business name
+          example: "Acme Corporation"
+        email:
+          type: string
+          format: email
+          description: Seller's contact email
+          example: "merchant@acme.com"
+
+    TransactionDetails:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+          description: Unique transaction identifier
+        type:
+          type: string
+          enum: [PAYMENT, REFUND]
+          description: Type of transaction
+        status:
+          type: string
+          enum: [PENDING, PROCESSED, FAILED, CANCELLED]
+          description: Current transaction status
+        amount:
+          $ref: '#/components/schemas/Amount'
+        seller:
+          $ref: '#/components/schemas/Seller'
+        buyer:
+          $ref: '#/components/schemas/BuyerInfo'
+        paymentOrderId:
+          type: string
+          description: Associated payment order ID
+        checkoutId:
+          type: string
+          description: Checkout session ID (null for refunds)
+        createdAt:
+          type: string
+          format: date-time
+          description: Transaction creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: Additional transaction metadata
+
+    BuyerInfo:
+      type: object
+      properties:
+        document:
+          type: string
+          description: Buyer's document/ID number
+          example: "123456789"
+        name:
+          type: string
+          description: Buyer's full name
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          description: Buyer's email address
+          example: "buyer@example.com"
+
+    TransactionListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionSummary'
+        page:
+          type: object
+          properties:
+            size:
+              type: integer
+              description: Number of items per page
+            number:
+              type: integer
+              description: Current page number
+            totalElements:
+              type: integer
+              format: int64
+              description: Total number of elements
+            totalPages:
+              type: integer
+              description: Total number of pages
+            first:
+              type: boolean
+              description: Is this the first page
+            last:
+              type: boolean
+              description: Is this the last page
+
+    TransactionSummary:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [PAYMENT, REFUND]
+        status:
+          type: string
+          enum: [PENDING, PROCESSED, FAILED, CANCELLED]
+        amount:
+          $ref: '#/components/schemas/Amount'
+        sellerId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Error code for programmatic handling
+              example: "INVALID_REQUEST"
+            message:
+              type: string
+              description: Human-readable error message
+              example: "The request contains invalid parameters"
+            details:
+              type: object
+              description: Additional error details
+              additionalProperties: true
+            timestamp:
+              type: string
+              format: date-time
+              description: Error occurrence timestamp
+            path:
+              type: string
+              description: API path where error occurred
+            requestId:
+              type: string
+              description: Request ID for tracking
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN, DEGRADED]
+          description: Overall health status
+        version:
+          type: string
+          description: Application version
+          example: "1.0.0"
+        timestamp:
+          type: string
+          format: date-time
+          description: Health check timestamp
+        checks:
+          type: object
+          properties:
+            database:
+              $ref: '#/components/schemas/HealthCheck'
+            kafka:
+              $ref: '#/components/schemas/HealthCheck'
+            disk:
+              $ref: '#/components/schemas/HealthCheck'
+
+    HealthCheck:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN, DEGRADED]
+        message:
+          type: string
+          description: Additional health check message
+        responseTime:
+          type: integer
+          description: Response time in milliseconds
+
+    ReadinessResponse:
+      type: object
+      properties:
+        ready:
+          type: boolean
+          description: Whether the service is ready
+        checks:
+          type: object
+          properties:
+            database:
+              type: boolean
+            kafka:
+              type: boolean
+            dependencies:
+              type: boolean
+
+  responses:
+    UnauthorizedError:
+      description: Authentication credentials are missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "UNAUTHORIZED"
+              message: "Invalid or missing authentication token"
+
+    ForbiddenError:
+      description: The authenticated user lacks permission for this operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "FORBIDDEN"
+              message: "You do not have permission to perform this operation"
+
+    RateLimitError:
+      description: Too many requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "RATE_LIMIT_EXCEEDED"
+              message: "API rate limit exceeded. Please retry after some time."
+      headers:
+        X-Rate-Limit-Limit:
+          description: Request limit per window
+          schema:
+            type: integer
+        X-Rate-Limit-Remaining:
+          description: Remaining requests in window
+          schema:
+            type: integer
+        X-Rate-Limit-Reset:
+          description: Time when the rate limit window resets
+          schema:
+            type: integer
+
+    InternalServerError:
+      description: An unexpected error occurred
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "INTERNAL_SERVER_ERROR"
+              message: "An unexpected error occurred. Please try again later."
+
+    ServiceUnavailableError:
+      description: Service is temporarily unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "SERVICE_UNAVAILABLE"
+              message: "Service is temporarily unavailable. Please try again later."
+      headers:
+        Retry-After:
+          description: Time to wait before retrying (in seconds)
+          schema:
+            type: integer
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT Bearer token authentication. 
+        Format: `Authorization: Bearer <token>`
+        
+        Token should contain the following claims:
+        - `sub`: Subject (user/service identifier)
+        - `iat`: Issued at timestamp
+        - `exp`: Expiration timestamp
+        - `scope`: Permissions scope
+
+  parameters:
+    TransactionId:
+      name: transactionId
+      in: path
+      description: Unique transaction identifier
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    PageNumber:
+      name: page
+      in: query
+      description: Page number (0-indexed)
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+    PageSize:
+      name: size
+      in: query
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
