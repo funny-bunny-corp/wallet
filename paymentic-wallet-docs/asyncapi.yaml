@@ -1,0 +1,603 @@
+asyncapi: 2.6.0
+id: 'urn:com.paymentic.wallet'
+info:
+  title: Paymentic Wallet Event-Driven API
+  version: 1.0.0
+  description: |
+    The Paymentic Wallet implements an event-driven architecture using Apache Kafka and CloudEvents specification. 
+    This AsyncAPI document describes all the events that the wallet service publishes and consumes.
+    
+    ## Event Flow
+    The wallet service acts as both a producer and consumer of events:
+    - **Consumes**: Payment order approvals and refund approvals from upstream services
+    - **Produces**: Transaction registered events for downstream analytics and processing
+    
+    ## CloudEvents
+    All events follow the CloudEvents v1.0 specification, ensuring interoperability and standardization across services.
+    
+    ## Topics
+    - `payment-orders`: Incoming payment and refund approvals
+    - `merchant-account`: Outgoing transaction events
+    
+    ## Message Guarantees
+    - At-least-once delivery semantics
+    - Message ordering preserved per partition (partitioned by seller ID)
+    - Idempotent event processing with transaction ID deduplication
+  contact:
+    name: Paymentic Platform Team
+    email: platform@paymentic.com
+    url: https://developer.paymentic.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+defaultContentType: application/cloudevents+json; charset=UTF-8
+
+servers:
+  production:
+    url: kafka-cluster.paymentic.com:9092
+    protocol: kafka
+    description: Production Kafka cluster
+    security:
+      - saslScram: []
+    bindings:
+      kafka:
+        schemaRegistryUrl: https://schema-registry.paymentic.com
+        schemaRegistryVendor: confluent
+  staging:
+    url: kafka-staging.paymentic.com:9092
+    protocol: kafka
+    description: Staging Kafka cluster
+    security:
+      - saslScram: []
+  development:
+    url: localhost:9092
+    protocol: kafka
+    description: Local development Kafka
+
+channels:
+  payment-orders:
+    description: |
+      Channel for payment order lifecycle events. The wallet service subscribes to this channel
+      to receive notifications about approved payment orders and refund requests.
+    bindings:
+      kafka:
+        topic: 'payment-orders'
+        partitions: 10
+        replicas: 3
+        topicConfiguration:
+          retention.ms: 604800000  # 7 days
+          compression.type: snappy
+          min.insync.replicas: 2
+        bindingVersion: '0.4.0'
+    subscribe:
+      summary: Process approved payment orders
+      description: |
+        Consumes payment order approval events from the payment gateway service.
+        Each event triggers the creation of a payment transaction in the wallet.
+      operationId: receivePaymentOrderApproved
+      bindings:
+        kafka:
+          groupId: wallet-payment-processor
+          clientId: wallet-service
+      message:
+        oneOf:
+          - $ref: '#/components/messages/PaymentOrderApproved'
+          - $ref: '#/components/messages/RefundApproved'
+      
+  merchant-account:
+    description: |
+      Channel for transaction events published by the wallet service.
+      All payment and refund transactions are published to this channel for 
+      downstream consumption by analytics, fraud detection, and notification services.
+    bindings:
+      kafka:
+        topic: 'merchant-account'
+        partitions: 20
+        replicas: 3
+        topicConfiguration:
+          retention.ms: 2592000000  # 30 days
+          compression.type: snappy
+          min.insync.replicas: 2
+          cleanup.policy: compact
+        bindingVersion: '0.4.0'
+    publish:
+      summary: Publish transaction registered events
+      description: |
+        Publishes events when transactions (payments or refunds) are registered in the wallet.
+        Events are partitioned by seller ID to maintain ordering per merchant.
+      operationId: publishTransactionRegistered
+      bindings:
+        kafka:
+          key:
+            type: string
+            description: Seller ID used as partition key
+      message:
+        $ref: '#/components/messages/TransactionRegistered'
+
+components:
+  messages:
+    PaymentOrderApproved:
+      name: PaymentOrderApproved
+      title: Payment Order Approved Event
+      summary: Indicates that a payment order has been approved by the payment gateway
+      description: |
+        This event is published when a payment order receives approval from the payment service provider (PSP).
+        The wallet service processes this event to create a corresponding payment transaction.
+      contentType: application/cloudevents+json; charset=UTF-8
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventHeaders'
+      payload:
+        $ref: '#/components/schemas/PaymentOrderApprovedEvent'
+      examples:
+        - name: StandardPaymentApproval
+          summary: Standard payment order approval
+          payload:
+            specversion: "1.0"
+            id: "evt_2024_001"
+            source: "/payments/orders/ord_123"
+            type: "com.paymentic.payments.v1.order.approved"
+            subject: "payment"
+            time: "2024-01-15T10:30:00Z"
+            datacontenttype: "application/json"
+            data:
+              orderId: "ord_123"
+              transactionId: "txn_456"
+              amount: "100.00"
+              currency: "USD"
+              sellerId: "seller_789"
+              buyerInfo:
+                document: "123456789"
+                name: "John Doe"
+              checkoutId: "chk_abc"
+              paymentMethod: "CREDIT_CARD"
+              approvedAt: "2024-01-15T10:29:55Z"
+
+    RefundApproved:
+      name: RefundApproved
+      title: Refund Approved Event
+      summary: Indicates that a refund request has been approved
+      description: |
+        This event is published when a refund request is approved.
+        The wallet service processes this event to create a refund transaction.
+        Note that refund transactions do not include checkout information.
+      contentType: application/cloudevents+json; charset=UTF-8
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventHeaders'
+      payload:
+        $ref: '#/components/schemas/RefundApprovedEvent'
+      examples:
+        - name: StandardRefundApproval
+          summary: Standard refund approval
+          payload:
+            specversion: "1.0"
+            id: "evt_2024_002"
+            source: "/refunds/ref_123"
+            type: "com.paymentic.refunds.v1.refund.approved"
+            subject: "refund"
+            time: "2024-01-15T14:30:00Z"
+            datacontenttype: "application/json"
+            data:
+              refundId: "ref_123"
+              originalTransactionId: "txn_456"
+              amount: "50.00"
+              currency: "USD"
+              sellerId: "seller_789"
+              buyerInfo:
+                document: "123456789"
+                name: "John Doe"
+              reason: "Product return"
+              approvedAt: "2024-01-15T14:29:55Z"
+
+    TransactionRegistered:
+      name: TransactionRegistered
+      title: Transaction Registered Event
+      summary: Indicates that a transaction has been registered in the wallet
+      description: |
+        This event is published whenever a transaction (payment or refund) is successfully
+        registered in the wallet system. It serves as the primary event for downstream
+        services to track financial movements.
+        
+        The event includes CloudEvents extensions for routing and context:
+        - `audience`: Target audience for the event (INTERNAL_BOUNDED_CONTEXT)
+        - `eventcontext`: Context of the event (DOMAIN)
+      contentType: application/cloudevents+json; charset=UTF-8
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventHeaders'
+      payload:
+        $ref: '#/components/schemas/TransactionRegisteredEvent'
+      examples:
+        - name: PaymentTransactionRegistered
+          summary: Payment transaction registered
+          payload:
+            specversion: "1.0"
+            id: "evt_2024_003"
+            source: "/transactions/550e8400-e29b-41d4-a716-446655440000"
+            type: "funny-bunny.xyz.merchant-account.v1.transaction.registered"
+            subject: "payment"
+            time: "2024-01-15T10:30:05Z"
+            datacontenttype: "application/json"
+            audience: "INTERNAL_BOUNDED_CONTEXT"
+            eventcontext: "DOMAIN"
+            data:
+              transaction:
+                id: "550e8400-e29b-41d4-a716-446655440000"
+              seller:
+                id: "seller_789"
+              payment:
+                id: "pay_order_123"
+              checkout:
+                id: "chk_abc"
+              buyer:
+                document: "123456789"
+                name: "John Doe"
+              amount: "100.00"
+              currency: "USD"
+              at: "2024-01-15T10:30:00"
+              operationType: "PAYMENT"
+        - name: RefundTransactionRegistered
+          summary: Refund transaction registered
+          payload:
+            specversion: "1.0"
+            id: "evt_2024_004"
+            source: "/transactions/660f9511-f30c-52e5-b827-557766551111"
+            type: "funny-bunny.xyz.merchant-account.v1.transaction.registered"
+            subject: "refund"
+            time: "2024-01-15T14:30:05Z"
+            datacontenttype: "application/json"
+            audience: "INTERNAL_BOUNDED_CONTEXT"
+            eventcontext: "DOMAIN"
+            data:
+              transaction:
+                id: "660f9511-f30c-52e5-b827-557766551111"
+              seller:
+                id: "seller_789"
+              payment:
+                id: "pay_order_123"
+              buyer:
+                document: "123456789"
+                name: "John Doe"
+              amount: "50.00"
+              currency: "USD"
+              at: "2024-01-15T14:30:00"
+              operationType: "REFUND"
+
+  schemas:
+    PaymentOrderApprovedEvent:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/CloudEvent'
+      properties:
+        data:
+          type: object
+          required:
+            - orderId
+            - transactionId
+            - amount
+            - currency
+            - sellerId
+            - buyerInfo
+            - checkoutId
+            - approvedAt
+          properties:
+            orderId:
+              type: string
+              description: Unique payment order identifier
+              example: "ord_123"
+            transactionId:
+              type: string
+              description: Payment service provider transaction ID
+              example: "txn_456"
+            amount:
+              type: string
+              description: Transaction amount
+              pattern: '^[0-9]+(\.[0-9]{1,2})?$'
+              example: "100.00"
+            currency:
+              type: string
+              description: ISO 4217 currency code
+              pattern: '^[A-Z]{3}$'
+              example: "USD"
+            sellerId:
+              type: string
+              description: Merchant/seller identifier
+              example: "seller_789"
+            buyerInfo:
+              $ref: '#/components/schemas/BuyerInfo'
+            checkoutId:
+              type: string
+              description: Checkout session identifier
+              example: "chk_abc"
+            paymentMethod:
+              type: string
+              enum: [CREDIT_CARD, DEBIT_CARD, BANK_TRANSFER, DIGITAL_WALLET, PIX]
+              description: Payment method used
+            approvedAt:
+              type: string
+              format: date-time
+              description: Timestamp of approval
+            metadata:
+              type: object
+              additionalProperties:
+                type: string
+              description: Additional payment metadata
+
+    RefundApprovedEvent:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/CloudEvent'
+      properties:
+        data:
+          type: object
+          required:
+            - refundId
+            - originalTransactionId
+            - amount
+            - currency
+            - sellerId
+            - buyerInfo
+            - approvedAt
+          properties:
+            refundId:
+              type: string
+              description: Unique refund identifier
+              example: "ref_123"
+            originalTransactionId:
+              type: string
+              description: Original payment transaction ID
+              example: "txn_456"
+            amount:
+              type: string
+              description: Refund amount
+              pattern: '^[0-9]+(\.[0-9]{1,2})?$'
+              example: "50.00"
+            currency:
+              type: string
+              description: ISO 4217 currency code
+              pattern: '^[A-Z]{3}$'
+              example: "USD"
+            sellerId:
+              type: string
+              description: Merchant/seller identifier
+              example: "seller_789"
+            buyerInfo:
+              $ref: '#/components/schemas/BuyerInfo'
+            reason:
+              type: string
+              description: Refund reason
+              example: "Product return"
+            approvedAt:
+              type: string
+              format: date-time
+              description: Timestamp of approval
+            metadata:
+              type: object
+              additionalProperties:
+                type: string
+              description: Additional refund metadata
+
+    TransactionRegisteredEvent:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/CloudEvent'
+      properties:
+        audience:
+          type: string
+          enum: [INTERNAL_BOUNDED_CONTEXT, EXTERNAL_BOUNDED_CONTEXT, PUBLIC]
+          description: Target audience for the event
+        eventcontext:
+          type: string
+          enum: [DOMAIN, INTEGRATION, TECHNICAL]
+          description: Context classification of the event
+        data:
+          type: object
+          required:
+            - transaction
+            - seller
+            - payment
+            - buyer
+            - amount
+            - currency
+            - at
+            - operationType
+          properties:
+            transaction:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                  description: Unique transaction identifier
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+            seller:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  description: Seller identifier
+                  example: "seller_789"
+            payment:
+              type: object
+              required:
+                - id
+              properties:
+                id:
+                  type: string
+                  description: Payment order identifier
+                  example: "pay_order_123"
+            checkout:
+              type: object
+              nullable: true
+              properties:
+                id:
+                  type: string
+                  description: Checkout session ID (null for refunds)
+                  example: "chk_abc"
+            buyer:
+              $ref: '#/components/schemas/BuyerInfo'
+            amount:
+              type: string
+              description: Transaction amount
+              pattern: '^[0-9]+(\.[0-9]{1,2})?$'
+              example: "100.00"
+            currency:
+              type: string
+              description: ISO 4217 currency code
+              pattern: '^[A-Z]{3}$'
+              example: "USD"
+            at:
+              type: string
+              format: date-time
+              description: Transaction timestamp
+              example: "2024-01-15T10:30:00"
+            operationType:
+              type: string
+              enum: [PAYMENT, REFUND]
+              description: Type of operation
+              example: "PAYMENT"
+
+    CloudEvent:
+      type: object
+      description: CloudEvents v1.0 specification
+      required:
+        - specversion
+        - id
+        - source
+        - type
+      properties:
+        specversion:
+          type: string
+          description: CloudEvents specification version
+          const: "1.0"
+        id:
+          type: string
+          description: Unique event identifier
+          example: "evt_2024_001"
+        source:
+          type: string
+          format: uri-reference
+          description: Event source URI
+          example: "/transactions/550e8400-e29b-41d4-a716-446655440000"
+        type:
+          type: string
+          description: Event type identifier
+          example: "funny-bunny.xyz.merchant-account.v1.transaction.registered"
+        subject:
+          type: string
+          description: Event subject
+          example: "payment"
+        time:
+          type: string
+          format: date-time
+          description: Event timestamp
+          example: "2024-01-15T10:30:00Z"
+        datacontenttype:
+          type: string
+          description: Content type of the data
+          default: "application/json"
+        dataschema:
+          type: string
+          format: uri
+          description: Schema URI for the data
+        data:
+          type: object
+          description: Event payload
+
+    BuyerInfo:
+      type: object
+      description: Buyer information
+      required:
+        - document
+        - name
+      properties:
+        document:
+          type: string
+          description: Buyer's document/ID number
+          example: "123456789"
+        name:
+          type: string
+          description: Buyer's full name
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          description: Buyer's email address
+          example: "buyer@example.com"
+        phone:
+          type: string
+          description: Buyer's phone number
+          example: "+1234567890"
+
+  messageTraits:
+    CloudEventHeaders:
+      headers:
+        type: object
+        properties:
+          ce-specversion:
+            type: string
+            const: "1.0"
+          ce-id:
+            type: string
+            description: Unique event ID
+          ce-source:
+            type: string
+            description: Event source
+          ce-type:
+            type: string
+            description: Event type
+          ce-subject:
+            type: string
+            description: Event subject
+          ce-time:
+            type: string
+            format: date-time
+            description: Event timestamp
+          ce-datacontenttype:
+            type: string
+            default: "application/json"
+          content-type:
+            type: string
+            const: "application/cloudevents+json"
+      bindings:
+        kafka:
+          key:
+            type: string
+            description: Message key (seller ID for partitioning)
+
+  securitySchemes:
+    saslScram:
+      type: scramSha512
+      description: SASL/SCRAM-SHA-512 authentication
+    apiKey:
+      type: apiKey
+      in: user
+      description: API key for service authentication
+
+  parameters:
+    sellerId:
+      description: Seller/Merchant identifier used for message partitioning
+      schema:
+        type: string
+        example: "seller_789"
+    correlationId:
+      description: Correlation ID for request tracing
+      schema:
+        type: string
+        format: uuid
+        example: "550e8400-e29b-41d4-a716-446655440000"
+
+tags:
+  - name: Payments
+    description: Payment-related events
+  - name: Refunds
+    description: Refund-related events
+  - name: Transactions
+    description: Transaction lifecycle events
+
+externalDocs:
+  description: Paymentic Wallet Developer Documentation
+  url: https://developer.paymentic.com/wallet
